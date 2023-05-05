@@ -1,0 +1,66 @@
+---
+title: "Excercise 3"
+---
+
+in Quarto (text file -> save as .qmd), main type of text is readable, not code
+to add code, makepress ctrl+alt+i
+
+## Task 1
+```{r}
+library("readr")
+library("dplyr")
+library("ggplot2")
+
+wildschwein <- read_csv("datasets/wildschwein_BE_2056.csv")
+
+wildschwein$TierName |> unique()
+
+sabi <- wildschwein |>
+  filter(TierName == "Sabi") |>
+  filter(DatetimeUTC >= as.POSIXct("2015-07-01", tz = "UTC"),
+         DatetimeUTC < as.POSIXct("2015-07-03", tz = "UTC"))
+# date gets converted somehow, thus out data is filtered from 06-30 22:00
+# to specify the Time zone, use as.POSIXct(.., tz = "UTC")
+
+ggplot(sabi, aes(E, N, color = DatetimeUTC)) +
+  geom_point() +
+  geom_path() +
+  coord_equal()   #matches the coords to the output window (looks nicer)
+
+# plotting sabi on a single y axis
+sabi |>
+  head(50) |>
+  ggplot(aes(DatetimeUTC, 1)) +
+  geom_point()
+# inspecting sabi dataset shows us the sampling interval of around 15 min
+
+sabi <- sabi |>
+  mutate(
+    n_plus1 = sqrt((lead(E)-E)^2 + (lead(N)-N)^2), 
+    n_plus2 = sqrt((lead(E, 2)-E)^2 + (lead(N, 2)-N)^2),  #changes the offset to 2
+    n_minus1 = sqrt((lag(E)-E)^2 + (lag(N)-N)^2),
+    n_minus2 = sqrt((lag(E, 2)-E)^2 + (lag(N, 2)-N)^2)
+  )
+
+sabi <- sabi |>
+  rowwise() |>
+  mutate(
+    stepMean = mean(c(n_plus1, n_plus2, n_minus1, n_minus2))  #could use ,na.rm = TRUE to remove NA from mean, but we want it as it makes more sense to get NA values when there are none in the input
+  ) |>
+  ungroup()  # this gets rid of the rowwise()
+
+ggplot(sabi, aes(stepMean)) +
+  geom_histogram(binwidth = 10) +
+  geom_vline(xintercept = mean(sabi$stepMean, na.rm = TRUE))
+# gives us an indication of which stepdistance to cut off => no movement
+
+sabi |>
+  mutate(static = stepMean < mean(stepMean, na.rm = TRUE)) |>
+  ggplot(aes(E, N)) +
+  geom_path() +
+  geom_point(aes(color = static)) +
+  coord_fixed()
+
+```
+
+to find static points, we have to define a temporal window and a threshold where to cut off points as no movement
