@@ -75,7 +75,7 @@ sabi |>
 
 to find static points, we have to define a temporal window and a threshold where to cut off points as no movement
 
-## Task 1
+## Preparation
 ```{r}
 library("readr")
 library("sf")
@@ -89,6 +89,59 @@ posmo <- st_as_sf(posmo, coords = c("lon_x","lat_y"), crs = 4326) |>
   st_transform(2056)
 
 head(posmo)
+
+posmo_coordinates <- st_coordinates(posmo)
+
+posmo <- cbind(posmo, posmo_coordinates)
+
+
+# latest bike route
+posmo_filter <- posmo |>
+    filter(as.Date(datetime) == "2023-05-03")
+
+```
+
+# Task 1
+using temporal window of 4, this means if stand still for 40 seconds (15 sec sampling interval (more or less)), it's a stand still
+```{r}
+posmo_filter <- posmo_filter |>
+    mutate(
+        nMinus2 = sqrt((lag(X, 2) - X)^2 + (lag(Y, 2) - Y)^2), # distance to pos -30 minutes
+        nMinus1 = sqrt((lag(X, 1) - X)^2 + (lag(Y, 1) - Y)^2), # distance to pos -15 minutes
+        nPlus1  = sqrt((X - lead(X, 1))^2 + (Y - lead(Y, 1))^2), # distance to pos +15 mintues
+        nPlus2  = sqrt((X - lead(X, 2))^2 + (Y - lead(Y, 2))^2) # distance to pos +30 minutes
+    )
+
+posmo_filter <- posmo_filter |> 
+  rowwise() |> 
+  mutate(stepMean = mean(c(nMinus2, nMinus1, nPlus1, nPlus2))) |> 
+  ungroup()
+
+posmo_filter <- posmo_filter
+
+# had to adjust the filtering, as I was nearly always riding the bike => mean stepMean just gives slow parts, not 'near standstill' parts. Would have filtered too much
+posmo_filter |> 
+  mutate(static = stepMean < median(stepMean/2, na.rm = TRUE)) |>
+  ggplot(aes(X, Y)) +
+  geom_path() +
+  geom_point(aes(color = static)) +
+  coord_fixed()
+
+
+posmo_filter <- posmo_filter |> 
+  mutate(static = stepMean < median(stepMean/2, na.rm = TRUE)) |> 
+  filter(!static)
+
+posmo_filter |> 
+  ggplot(aes(X, Y)) +
+  geom_path() +
+  geom_point(aes(color = static)) +
+  coord_fixed()
+
+```
+
+# Task 2
+```{r}
 
 ```
 
