@@ -79,6 +79,7 @@ to find static points, we have to define a temporal window and a threshold where
 ```{r}
 library("readr")
 library("sf")
+library("cowplot")
 
 posmo <- read_delim("datasets/posmo_2023-04-10T00_00_00+02_00-2023-05-04T23_59_59+02_00.csv")
 
@@ -194,9 +195,29 @@ p2 <- posmo_filter |>
   coord_fixed()+
   ggtitle("Long segments, removed segments <5mins")
 
-library(cowplot)
+
 plot_grid(p1, p2, ncol = 1)
 
+```
+
+# Task 5
+```{r}
+pedestrian <- read_csv("datasets/pedestrian.csv")
+
+pedestrian |> 
+  group_by(TrajID) |> 
+  ggplot(aes(E, N)) +
+  geom_point(aes(color = TrajID)) +
+  geom_path() +
+  facet_wrap(vars(TrajID), ncol = 3) +
+  coord_fixed() +
+  scale_fill_brewer(palette = "YlOrRd") +
+  ggtitle("6 pedestrians seperately visualized")
+
+```
+
+# Task 6
+```{r}
 
 ```
 
