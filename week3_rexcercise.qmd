@@ -5,7 +5,7 @@ title: "Excercise 3"
 in Quarto (text file -> save as .qmd), main type of text is readable, not code
 to add code, makepress ctrl+alt+i
 
-## Task 1
+## Task 0
 ```{r}
 library("readr")
 library("dplyr")
@@ -61,6 +61,34 @@ sabi |>
   geom_point(aes(color = static)) +
   coord_fixed()
 
+
+sabi |>
+  mutate(static = stepMean < mean(stepMean, na.rm = TRUE)) |> 
+  filter(!static) |> 
+  ggplot(aes(E,N))+
+  geom_path() +
+  geom_point() +
+  coord_fixed() +
+  theme(legend.position = "bottom")
+
 ```
 
 to find static points, we have to define a temporal window and a threshold where to cut off points as no movement
+
+## Task 1
+```{r}
+library("readr")
+library("sf")
+
+posmo <- read_delim("datasets/posmo_2023-04-10T00_00_00+02_00-2023-05-04T23_59_59+02_00.csv")
+
+# Keep only the necessary columns
+posmo <- select(posmo, datetime, lon_x, lat_y)
+
+posmo <- st_as_sf(posmo, coords = c("lon_x","lat_y"), crs = 4326) |>
+  st_transform(2056)
+
+head(posmo)
+
+```
+
