@@ -96,7 +96,7 @@ posmo <- cbind(posmo, posmo_coordinates)
 
 
 # latest bike route
-posmo_filter <- posmo |>
+posmo_filter_date <- posmo |>
     filter(as.Date(datetime) == "2023-05-03")
 
 ```
@@ -104,7 +104,7 @@ posmo_filter <- posmo |>
 # Task 1
 using temporal window of 4, this means if stand still for 40 seconds (15 sec sampling interval (more or less)), it's a stand still
 ```{r}
-posmo_filter <- posmo_filter |>
+posmo_filter <- posmo_filter_date |>
     mutate(
         nMinus2 = sqrt((lag(X, 2) - X)^2 + (lag(Y, 2) - Y)^2), # distance to pos -30 minutes
         nMinus1 = sqrt((lag(X, 1) - X)^2 + (lag(Y, 1) - Y)^2), # distance to pos -15 minutes
@@ -117,30 +117,52 @@ posmo_filter <- posmo_filter |>
   mutate(stepMean = mean(c(nMinus2, nMinus1, nPlus1, nPlus2))) |> 
   ungroup()
 
-posmo_filter <- posmo_filter
 
 # had to adjust the filtering, as I was nearly always riding the bike => mean stepMean just gives slow parts, not 'near standstill' parts. Would have filtered too much
-posmo_filter |> 
-  mutate(static = stepMean < median(stepMean/2, na.rm = TRUE)) |>
-  ggplot(aes(X, Y)) +
-  geom_path() +
-  geom_point(aes(color = static)) +
-  coord_fixed()
 
+# Apparently not part of this task
 
-posmo_filter <- posmo_filter |> 
-  mutate(static = stepMean < median(stepMean/2, na.rm = TRUE)) |> 
-  filter(!static)
+# posmo_filter |> 
+#   mutate(static = stepMean < mean(stepMean/2, na.rm = TRUE)) |>
+#   ggplot(aes(X, Y)) +
+#   geom_path() +
+#   geom_point(aes(color = static)) +
+#   coord_fixed()
+# 
+# 
+# posmo_filter <- posmo_filter |> 
+#   mutate(static = stepMean < mean(stepMean/2, na.rm = TRUE)) |> 
+#   filter(!static)
+# 
 
-posmo_filter |> 
-  ggplot(aes(X, Y)) +
-  geom_path() +
-  geom_point(aes(color = static)) +
-  coord_fixed()
 
 ```
 
 # Task 2
+```{r}
+
+ggplot(posmo_filter, aes(stepMean)) +
+  geom_histogram(binwidth = 5)
+# around 25 stepMean seems good 
+
+summary(posmo_filter$stepMean)
+
+posmo_thresh <- posmo_filter |>
+  mutate(static = stepMean < mean(stepMean, na.rm = TRUE)) 
+
+
+```
+
+# Task 3 (see also end of Task 1)
+```{r}
+posmo_thresh |>
+  ggplot(aes(X, Y)) +
+  geom_path() +
+  geom_point(aes(color = static)) +
+  coord_fixed()
+```
+
+# Task 4 
 ```{r}
 
 ```
