@@ -97,7 +97,7 @@ posmo <- cbind(posmo, posmo_coordinates)
 
 # latest bike route
 posmo_filter_date <- posmo |>
-    filter(as.Date(datetime) == "2023-05-03")
+    filter(as.Date(datetime) == "2023-04-26")
 
 ```
 
@@ -147,7 +147,7 @@ ggplot(posmo_filter, aes(stepMean)) +
 
 summary(posmo_filter$stepMean)
 
-posmo_thresh <- posmo_filter |>
+posmo_filter <- posmo_filter |>
   mutate(static = stepMean < mean(stepMean, na.rm = TRUE)) 
 
 
@@ -155,7 +155,7 @@ posmo_thresh <- posmo_filter |>
 
 # Task 3 (see also end of Task 1)
 ```{r}
-posmo_thresh |>
+posmo_filter |>
   ggplot(aes(X, Y)) +
   geom_path() +
   geom_point(aes(color = static)) +
@@ -164,6 +164,39 @@ posmo_thresh |>
 
 # Task 4 
 ```{r}
+rle_id <- function(vec) {
+    x <- rle(vec)$lengths
+    as.factor(rep(seq_along(x), times = x))
+}
+
+posmo_filter <- posmo_filter |>
+    mutate(segment_id = rle_id(static)) |> 
+    filter(!static)
+
+
+head(posmo_filter)
+
+
+#All segments (without static)
+p1 <- posmo_filter |>
+  ggplot(aes(X, Y)) +
+  geom_point(aes(color = segment_id)) +
+  coord_fixed() +
+  ggtitle("All segments")
+
+#Long segments
+p2 <- posmo_filter |> 
+  group_by(segment_id) |> 
+  mutate(timediff = as.numeric(difftime(max(datetime), min(datetime)))) |>  # as.numeric gives minute here, not seconds
+  filter(timediff > 5) |> 
+    ggplot(aes(X, Y)) +
+  geom_point(aes(color = segment_id)) +
+  coord_fixed()+
+  ggtitle("Long segments, removed segments <5mins")
+
+library(cowplot)
+plot_grid(p1, p2, ncol = 1)
+
 
 ```
 
