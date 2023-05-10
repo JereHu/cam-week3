@@ -3,7 +3,7 @@ title: "Excercise 3"
 ---
 
 in Quarto (text file -> save as .qmd), main type of text is readable, not code
-to add code, makepress ctrl+alt+i
+to add code, press ctrl+alt+i
 
 ## Task 0
 ```{r}
@@ -228,38 +228,86 @@ pedestrian |>
   group_by(TrajID) |> 
   mutate(DTW = DTW())
 
+
+# reading out subsets
 ped1 <- pedestrian |> 
   filter(TrajID == 1) |> 
   select(E, N)
+
 ped2 <- pedestrian |> 
   filter(TrajID == 2)|> 
   select(E, N)
+
 ped3 <- pedestrian |> 
   filter(TrajID == 3)|> 
   select(E, N)
+
 ped4 <- pedestrian |> 
   filter(TrajID == 4)|> 
   select(E, N)
+
 ped5 <- pedestrian |> 
   filter(TrajID == 5)|> 
   select(E, N)
+
 ped6 <- pedestrian |> 
   filter(TrajID == 6)|> 
   select(E, N)
 
-# list <- c(ped2,ped3, ped4, ped5, ped6)
-# 
-# for (x in list){
-#   combine = combine |> 
-#     mutate(DTW = DTW(data.matrix(ped1), data.matrix(x)))
-# }
+# putting in a list
+list <- list(ped2, ped3, ped4, ped5, ped6)
 
-combine <- tibble()
-combine = combine |> 
-  mutate(DTW = DTW(data.matrix(ped1), data.matrix(ped2)))
+#new matrix to store values (empty)
+combined <- matrix(nrow = 5, ncol = 4)
 
-print(test, n = 47)
+print(combined)
 
-data.matrix(ped1)
+#calculate results (1 against 2-6) and store in matrix
+i= 1 
+for (subset in list){
+  combined[i, 1] = DTW(data.matrix(ped1), data.matrix(subset))
+  combined[i, 2] = EditDist(data.matrix(ped1), data.matrix(subset))
+  combined[i, 3] = Frechet(data.matrix(ped1), data.matrix(subset))
+  combined[i, 4] = LCSS(data.matrix(ped1), data.matrix(subset), pointSpacing = 4) #point distance as 500, as I understand, the range of points on x axis is 2571500-2569800 or so, hence a quarter seems fine, and index spacing of 10 seems ok with 47 points?
+  # but it crashed after 30 secs, so I run with very low numbers
+  i = i+1
+  print(combined)
+}
+
+# #convert matrix to data frame
+df <- as.data.frame(combined)
+# #specify column names
+colnames(df) <- c('DTW', 'EditDist', 'Frechet', 'LCSS')
+
+#convert to tibble
+as_tibble(df)
+
+
+# my idea didn't really work out with plotting, so rebuild to something that is easier to plot
+
+unraveled <- matrix(unlist(df))  
+
+algoList <- list('DTW', 'EditDist', 'Frechet', 'LCSS')
+
+new <- tibble()
+
+# creates a new df that is easy to plot with in ggplot
+for (j in 1:4){
+  for (i in 2:6){
+    temp <- data.frame(algoList[j], as.character(i), unraveled[(i-1)+((j-1)*5)])
+    colnames(temp) <- c("Name", "Comparedto", "Result")
+    new <- rbind(new, temp)
+  }
+}
+
+#plot bars
+new |> 
+  ggplot() +
+    geom_bar(aes(x = Comparedto, y = Result, fill = Comparedto), stat = "identity") +
+    facet_wrap(vars(Name), ncol = 2, scales = "free") +
+    ggtitle("6 pedestrians seperately visualized")
+
+# for the colors to be able to map to Compared trajectories, need to make them characters in the tibble.  ..|.. R
+
 ```
 
