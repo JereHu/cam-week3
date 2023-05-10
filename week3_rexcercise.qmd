@@ -305,9 +305,10 @@ new |>
   ggplot() +
     geom_bar(aes(x = Comparedto, y = Result, fill = Comparedto), stat = "identity") +
     facet_wrap(vars(Name), ncol = 2, scales = "free") +
-    ggtitle("6 pedestrians seperately visualized")
+    ggtitle("4 Similarity Measures between trajectory 1 and 2-6")
 
 # for the colors to be able to map to Compared trajectories, need to make them characters in the tibble.  ..|.. R
 
 ```
-
+My numbers from the similarity measures are not very similar to nils. I used very standard values, maybe that's the issue.
+Otherwise I guess we will see in class
